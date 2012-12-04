@@ -1,8 +1,15 @@
 package ru.lsv.torrentchecker.server;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Map;
+
 import ru.lsv.torrentchecker.client.GreetingService;
-import ru.lsv.torrentchecker.shared.FieldVerifier;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+import com.turn.ttorrent.bcodec.BDecoder;
+import com.turn.ttorrent.bcodec.BEValue;
+import com.turn.ttorrent.bcodec.InvalidBEncodingException;
 
 /**
  * The server side implementation of the RPC service.
@@ -12,23 +19,25 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements
 		GreetingService {
 
 	public String greetServer(String input) throws IllegalArgumentException {
-		// Verify that the input is valid. 
-		if (!FieldVerifier.isValidName(input)) {
-			// If the input is not valid, throw an IllegalArgumentException back to
-			// the client.
-			throw new IllegalArgumentException(
-					"Name must be at least 4 characters long");
+		
+		Map<String, BEValue> decoded = null;
+		try {
+			decoded = BDecoder.bdecode(new FileInputStream("J:/Torrents/[NNM-Club.ru]_EADOR.iso.torrent")).getMap();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
+
+		try {
+			return "Hello " + decoded.get("comment").getString();
+		} catch (InvalidBEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return "";
 		}
-
-		String serverInfo = getServletContext().getServerInfo();
-		String userAgent = getThreadLocalRequest().getHeader("User-Agent");
-
-		// Escape data from the client to avoid cross-site script vulnerabilities.
-		input = escapeHtml(input);
-		userAgent = escapeHtml(userAgent);
-
-		return "Hello, " + input + "!<br><br>I am running " + serverInfo
-				+ ".<br><br>It looks like you are using:<br>" + userAgent;
 	}
 
 	/**

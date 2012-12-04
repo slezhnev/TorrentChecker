@@ -5,10 +5,20 @@
          version="2.5"
          xmlns="http://java.sun.com/xml/ns/javaee">
 
+  <listener>
+  	<listener-class>
+  		ru.lsv.torrentchecker.server.TorrentCheckerService
+  	</listener-class>
+  </listener> 	
+
   <!-- Servlets -->
   <servlet>
     <servlet-name>greetServlet</servlet-name>
     <servlet-class>ru.lsv.torrentchecker.server.GreetingServiceImpl</servlet-class>
+    <init-param>
+        <param-name> storagePath </param-name>
+        <param-value> J:/!/ </param-value>
+    </init-param>
   </servlet>
   
   <servlet-mapping>
