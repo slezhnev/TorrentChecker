@@ -37,9 +37,14 @@ public class Commons {
 	 */
 	private static String torrentsInQueue;
 	/**
+	 * Куда отправлять email'ы с оповещением. Может отсутствовать
+	 */
+	private static String sendEmailTo;
+	/**
 	 * Имена пользователей с паролями
 	 */
 	private static volatile Map<String, User> credentials;
+	private static volatile User mailCredentials;
 	/**
 	 * Имя директории, где лежит конфигурация
 	 */
@@ -85,6 +90,13 @@ public class Commons {
 	}
 
 	/**
+	 * @return the mail credentials
+	 */
+	public static User getMailCredentials() {
+		return mailCredentials;
+	}
+
+	/**
 	 * @param creds
 	 *            the credentials to set
 	 */
@@ -100,10 +112,18 @@ public class Commons {
 	}
 
 	/**
-	 * @param workingResult the workingResult to set
+	 * @param workingResult
+	 *            the workingResult to set
 	 */
 	public static void setWorkingResult(WorkingResult workingResult) {
 		Commons.workingResult = workingResult;
+	}
+
+	/**
+	 * @return the sendEmailTo
+	 */
+	public static String getSendEmailTo() {
+		return sendEmailTo;
 	}
 
 	/**
@@ -146,6 +166,7 @@ public class Commons {
 						props.getProperty("torrents_inqueue"))
 						.getCanonicalPath()
 						+ File.separator;
+				sendEmailTo = props.getProperty("mail_to");
 			} catch (IOException e) {
 				throw new ConfigLoadException("Failed to normalize paths");
 			}
@@ -154,6 +175,7 @@ public class Commons {
 			credentials = Credentials.getInstance().loadCredentials(
 					new File(configPath + File.separator
 							+ "credentials.properties"));
+			mailCredentials = Credentials.getInstance().getMailCredentials();
 		} catch (IOException e) {
 			// Rethrow под другим именем
 			throw new ConfigLoadException(e.getMessage());

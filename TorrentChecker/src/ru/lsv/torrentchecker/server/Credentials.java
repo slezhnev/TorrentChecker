@@ -24,7 +24,15 @@ import ru.lsv.torrentchecker.shared.User;
  */
 public class Credentials {
 
+	/**
+	 * Singleton
+	 */
 	private static Credentials instance = null;
+
+	/**
+	 * Credentials для отправки почты через gmail
+	 */
+	private User mailCredentials = null;
 
 	/**
 	 * Синглтон <br/>
@@ -92,6 +100,12 @@ public class Credentials {
 					new User(creds.getProperty("name" + i), creds
 							.getProperty("password" + i)));
 		}
+		mailCredentials = null;
+		if (creds.containsKey("mail.name")
+				&& creds.containsKey("mail.password")) {
+			mailCredentials = new User(creds.getProperty("mail.name"),
+					creds.getProperty("mail.password"));
+		}
 		return res;
 	}
 
@@ -122,5 +136,12 @@ public class Credentials {
 			}
 		}
 		props.storeToXML(new FileOutputStream(credentialsFile), "credentials");
+	}
+
+	/**
+	 * @return the mailCredentials
+	 */
+	public User getMailCredentials() {
+		return mailCredentials;
 	}
 }

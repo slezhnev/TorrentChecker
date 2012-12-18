@@ -9,10 +9,23 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+
+import javax.activation.DataHandler;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import javax.mail.util.ByteArrayDataSource;
 
 import ru.lsv.torrentchecker.server.Commons;
 import ru.lsv.torrentchecker.server.bcodec.BDecoder;
@@ -21,7 +34,6 @@ import ru.lsv.torrentchecker.server.bcodec.InvalidBEncodingException;
 import ru.lsv.torrentchecker.server.torrents.impl.NNMClubDownloader;
 import ru.lsv.torrentchecker.shared.User;
 import ru.lsv.torrentchecker.shared.WorkingResult.FileProcessingResult;
-
 
 /**
  * Класс, обеспечивающий загрузку торрента
@@ -212,20 +224,60 @@ public class TorrentDownloader {
 	 *            Список новых файлов в торренте (null - если торрент просто
 	 *            новый)
 	 */
-	private void fireMailAnnounce(String name, List<String> newFiles) {
-		// TODO Допилить
-		// Выдадим для отладки
-		System.out.println("!! fireMailAnnounce !! ");
-		System.out.println("name = " + name);
-		if (newFiles != null) {
-			System.out.print("newFiles=");
-			for (String file : newFiles) {
-				System.out.print(file + "; ");
+	public void fireMailAnnounce(String name, List<String> newFiles) {
+		// Первое - нам надо проверить наличие пачки дополнительных
+		// пропертей в credentials
+		if ((Commons.getMailCredentials() != null)
+				&& (Commons.getSendEmailTo() != null)) {
+			Properties props = System.getProperties();
+			// props.put("mail.smtp.starttls.enable", "false");
+			props.put("mail.smtp.host", "smtp.gmail.com");
+			props.put("mail.smtp.port", "465");
+			props.put("mail.smtp.auth", "true");
+			props.put("mail.smtp.debug", "true");
+			props.put("mail.smtp.socketFactory.port", "465");
+			props.put("mail.smtp.socketFactory.class",
+					"javax.net.ssl.SSLSocketFactory");
+			props.put("mail.smtp.socketFactory.fallback", "false");
+			//
+			Session session = Session.getDefaultInstance(props,
+					new javax.mail.Authenticator() {
+						protected PasswordAuthentication getPasswordAuthentication() {
+							return new PasswordAuthentication(Commons
+									.getMailCredentials().getUserName(),
+									Commons.getMailCredentials().getPassword());
+						}
+					});
+			MimeMessage message = new MimeMessage(session);
+			try {
+				message.setFrom(new InternetAddress(Commons
+						.getMailCredentials().getUserName()));
+				message.addRecipient(Message.RecipientType.TO,
+						new InternetAddress(Commons.getSendEmailTo()));
+				message.setSubject("Обновление " + name);
+				StringBuffer str = new StringBuffer();
+				str.append("<html><head><title>").append(message.getSubject())
+						.append("</title></head><body>");
+				str.append("Новые файлы в торренте ").append(name)
+						.append(": <p/>");
+				for (String file : newFiles) {
+					str.append(file).append("<br/>");
+				}
+				str.append("\n</body></html>");
+				message.setDataHandler(new DataHandler(new ByteArrayDataSource(
+						str.toString(), "text/html")));
+				message.setHeader("X-Mailer", "Torrent checker");
+				message.setSentDate(new Date());
+				Transport.send(message);
+			} catch (AddressException e) {
+				// Do nothing
+			} catch (MessagingException e) {
+				// Do nothing
+				e.printStackTrace();
+			} catch (IOException e) {
+				// Do nothing
 			}
-		} else {
-			System.out.println("New torrent!");
 		}
-		System.out.println();
 	}
 
 	/**
