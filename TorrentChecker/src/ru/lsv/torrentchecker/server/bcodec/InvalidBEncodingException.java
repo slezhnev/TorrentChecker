@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.turn.ttorrent.bcodec;
+package ru.lsv.torrentchecker.server.bcodec;
 
 import java.io.IOException;
 

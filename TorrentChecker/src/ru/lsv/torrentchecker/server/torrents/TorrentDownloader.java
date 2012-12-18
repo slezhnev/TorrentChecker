@@ -1,5 +1,5 @@
 /**
- * Класс, обеспечивающий загрузку торрента
+ * РљР»Р°СЃСЃ, РѕР±РµСЃРїРµС‡РёРІР°СЋС‰РёР№ Р·Р°РіСЂСѓР·РєСѓ С‚РѕСЂСЂРµРЅС‚Р°
  */
 package ru.lsv.torrentchecker.server.torrents;
 
@@ -15,21 +15,23 @@ import java.util.Map;
 import java.util.Set;
 
 import ru.lsv.torrentchecker.server.Commons;
+import ru.lsv.torrentchecker.server.bcodec.BDecoder;
+import ru.lsv.torrentchecker.server.bcodec.BEValue;
+import ru.lsv.torrentchecker.server.bcodec.InvalidBEncodingException;
 import ru.lsv.torrentchecker.server.torrents.impl.NNMClubDownloader;
+import ru.lsv.torrentchecker.shared.User;
+import ru.lsv.torrentchecker.shared.WorkingResult.FileProcessingResult;
 
-import com.turn.ttorrent.bcodec.BDecoder;
-import com.turn.ttorrent.bcodec.BEValue;
-import com.turn.ttorrent.bcodec.InvalidBEncodingException;
 
 /**
- * Класс, обеспечивающий загрузку торрента
+ * РљР»Р°СЃСЃ, РѕР±РµСЃРїРµС‡РёРІР°СЋС‰РёР№ Р·Р°РіСЂСѓР·РєСѓ С‚РѕСЂСЂРµРЅС‚Р°
  * 
  * @author admin
  */
 public class TorrentDownloader {
 
 	/**
-	 * Общий список загрузчиков
+	 * РћР±С‰РёР№ СЃРїРёСЃРѕРє Р·Р°РіСЂСѓР·С‡РёРєРѕРІ
 	 */
 	List<TorrentDownloaderInterface> downloaders = new ArrayList<>();
 
@@ -37,35 +39,38 @@ public class TorrentDownloader {
 	 * Default constructor
 	 */
 	public TorrentDownloader() {
-		// Создаем внутренний список
+		// РЎРѕР·РґР°РµРј РІРЅСѓС‚СЂРµРЅРЅРёР№ СЃРїРёСЃРѕРє
 		downloaders.add(new NNMClubDownloader());
 	}
 
 	/**
-	 * Осуществляет проверку обновления указанного .torrent-файла <br>
-	 * Если файл изменился - то: <br>
-	 * 1. Он будет выложен на место torrentFile <br>
-	 * 2. Он будет скопирован в autoloadPath <br>
-	 * Файлы, не содержащие блок "comment" с валидным URL - просто игнорируются
+	 * РћСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ РїСЂРѕРІРµСЂРєСѓ РѕР±РЅРѕРІР»РµРЅРёСЏ СѓРєР°Р·Р°РЅРЅРѕРіРѕ .torrent-С„Р°Р№Р»Р° <br>
+	 * Р•СЃР»Рё С„Р°Р№Р» РёР·РјРµРЅРёР»СЃСЏ - С‚Рѕ: <br>
+	 * 1. РћРЅ Р±СѓРґРµС‚ РІС‹Р»РѕР¶РµРЅ РЅР° РјРµСЃС‚Рѕ torrentFile <br>
+	 * 2. РћРЅ Р±СѓРґРµС‚ СЃРєРѕРїРёСЂРѕРІР°РЅ РІ autoloadPath <br>
+	 * Р¤Р°Р№Р»С‹, РЅРµ СЃРѕРґРµСЂР¶Р°С‰РёРµ Р±Р»РѕРє "comment" СЃ РІР°Р»РёРґРЅС‹Рј URL - РїСЂРѕСЃС‚Рѕ РёРіРЅРѕСЂРёСЂСѓСЋС‚СЃСЏ
 	 * *
 	 * 
 	 * @param torrentFile
-	 *            .torrent-файл, обновление которого надо проверить
+	 *            .torrent-С„Р°Р№Р», РѕР±РЅРѕРІР»РµРЅРёРµ РєРѕС‚РѕСЂРѕРіРѕ РЅР°РґРѕ РїСЂРѕРІРµСЂРёС‚СЊ
 	 * @param credentials
-	 *            Имена пользователей и паролей к ресурсам
+	 *            РРјРµРЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ Рё РїР°СЂРѕР»РµР№ Рє СЂРµСЃСѓСЂСЃР°Рј
 	 * @param pathToDownload
-	 *            Куда загружать временно .torrent-файл
+	 *            РљСѓРґР° Р·Р°РіСЂСѓР¶Р°С‚СЊ РІСЂРµРјРµРЅРЅРѕ .torrent-С„Р°Р№Р»
 	 * @param autoloadPath
-	 *            Куда выкладывать .torrent-файл, если он изменился
+	 *            РљСѓРґР° РІС‹РєР»Р°РґС‹РІР°С‚СЊ .torrent-С„Р°Р№Р», РµСЃР»Рё РѕРЅ РёР·РјРµРЅРёР»СЃСЏ
+	 * @return Р РµР·СѓР»СЊС‚Р°С‚ РѕР±СЂР°Р±РѕС‚РєРё С„Р°Р№Р»Р°
 	 * @throws IOException
-	 *             В случае возникновения проблем с работой
+	 *             Р’ СЃР»СѓС‡Р°Рµ РІРѕР·РЅРёРєРЅРѕРІРµРЅРёСЏ РїСЂРѕР±Р»РµРј СЃ СЂР°Р±РѕС‚РѕР№
 	 */
-	public void check(File torrentFile, Map<String, User> credentials,
-			String pathToDownload, String autoloadPath) throws IOException,
-			TorrentDownloaderException {
-		// Первое - парсим .torrent файл
-		Map<String, BEValue> decoded = BDecoder.bdecode(
-				new FileInputStream(torrentFile)).getMap();
+	public FileProcessingResult check(File torrentFile,
+			Map<String, User> credentials, String pathToDownload,
+			String autoloadPath) throws IOException, TorrentDownloaderException {
+		FileProcessingResult res = FileProcessingResult.UNCHANGED;
+		// РџРµСЂРІРѕРµ - РїР°СЂСЃРёРј .torrent С„Р°Р№Р»
+		FileInputStream torrentFIS = new FileInputStream(torrentFile);
+		Map<String, BEValue> decoded = BDecoder.bdecode(torrentFIS).getMap();
+		torrentFIS.close();
 		if (decoded.containsKey("comment")) {
 			URL torrentUrl = null;
 			try {
@@ -74,14 +79,14 @@ public class TorrentDownloader {
 				throw new TorrentDownloaderException("Malformed URL in comment");
 			}
 			if (torrentUrl != null) {
-				// Достаем из него host
+				// Р”РѕСЃС‚Р°РµРј РёР· РЅРµРіРѕ host
 				String torrentHost = torrentUrl.getHost();
-				// Первое - ищем credentials
+				// РџРµСЂРІРѕРµ - РёС‰РµРј credentials
 				if (!credentials.containsKey(torrentHost)) {
 					throw new TorrentDownloaderException(
 							"Cannot find credentials for " + torrentHost);
 				}
-				// Теперь поедем поищем соответствующую реализацию downloader'а
+				// РўРµРїРµСЂСЊ РїРѕРµРґРµРј РїРѕРёС‰РµРј СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰СѓСЋ СЂРµР°Р»РёР·Р°С†РёСЋ downloader'Р°
 				TorrentDownloaderInterface implDownloader = null;
 				for (TorrentDownloaderInterface impl : downloaders) {
 					if ((impl.getResource() != null)
@@ -94,99 +99,153 @@ public class TorrentDownloader {
 					throw new TorrentDownloaderException(
 							"Cannot find downloader for " + torrentHost);
 				}
-				// Нашли имплементацию. Загружаем файлО во временное место
-				// хранения
-				String downloadedTorrent = implDownloader.downloadTorrent(
-						torrentUrl, credentials.get(torrentHost).getUserName(),
-						credentials.get(torrentHost).getPassword(),
-						pathToDownload);
+				// РќР°С€Р»Рё РёРјРїР»РµРјРµРЅС‚Р°С†РёСЋ. Р—Р°РіСЂСѓР¶Р°РµРј С„Р°Р№Р»Рћ РІРѕ РІСЂРµРјРµРЅРЅРѕРµ РјРµСЃС‚Рѕ
+				// С…СЂР°РЅРµРЅРёСЏ
+				String downloadedTorrent = null;
+				downloadedTorrent = implDownloader
+						.downloadTorrent(torrentUrl,
+								credentials.get(torrentHost).getUserName(),
+								credentials.get(torrentHost).getPassword(),
+								pathToDownload);
 				if (downloadedTorrent != null) {
-					// Поехали проверим - а он есть на самом дела?
+					// РџРѕРµС…Р°Р»Рё РїСЂРѕРІРµСЂРёРј - Р° РѕРЅ РµСЃС‚СЊ РЅР° СЃР°РјРѕРј РґРµР»Р°?
 					File downloadedTorrentFile = new File(downloadedTorrent);
 					if (downloadedTorrentFile.exists()) {
-						// Первое - было бы тупо неплохо сравнить файлы просто
-						// по хэшу. Если хэш совпадает - дальше ничего не
-						// парсим. Значит файлы совпадают
+						// РџРµСЂРІРѕРµ - Р±С‹Р»Рѕ Р±С‹ С‚СѓРїРѕ РЅРµРїР»РѕС…Рѕ СЃСЂР°РІРЅРёС‚СЊ С„Р°Р№Р»С‹ РїСЂРѕСЃС‚Рѕ
+						// РїРѕ С…СЌС€Сѓ. Р•СЃР»Рё С…СЌС€ СЃРѕРІРїР°РґР°РµС‚ - РґР°Р»СЊС€Рµ РЅРёС‡РµРіРѕ РЅРµ
+						// РїР°СЂСЃРёРј. Р—РЅР°С‡РёС‚ С„Р°Р№Р»С‹ СЃРѕРІРїР°РґР°СЋС‚
+						// Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕ - РЅР°РґРѕ РїСЂРѕРІРµСЂРёС‚СЊ, С‡С‚Рѕ РІ РґРёСЂРµРєС‚РѕСЂРёРё
+						// С‚РѕСЂСЂРµРЅС‚РѕРІ СЌС‚РѕС‚ С„Р°Р№Р» РµСЃС‚СЊ. Р•СЃР»Рё РµРіРѕ РЅРµС‚ - С‚Рѕ РµРіРѕ
+						// РЅР°РґРѕ РІС‹РєР»Р°РґС‹РІР°С‚СЊ РћР‘РЇР—РђРўР•Р›Р¬РќРћ!
+						boolean isFileInQueue = new File(
+								Commons.getTorrentsInQueue()
+										+ torrentFile.getName()).exists();
 						if (org.apache.commons.io.FileUtils
 								.checksumCRC32(torrentFile) != org.apache.commons.io.FileUtils
-								.checksumCRC32(downloadedTorrentFile)) {
-							// Отлично. Попарсим и его.
-							// В результате - нам надо найти что ж там нового
+								.checksumCRC32(downloadedTorrentFile)
+								|| (!isFileInQueue)) {
+							List<String> newFiles = new ArrayList<>();
+							// РћС‚Р»РёС‡РЅРѕ. РџРѕРїР°СЂСЃРёРј Рё РµРіРѕ.
+							// Р’ СЂРµР·СѓР»СЊС‚Р°С‚Рµ - РЅР°Рј РЅР°РґРѕ РЅР°Р№С‚Рё С‡С‚Рѕ Р¶ С‚Р°Рј РЅРѕРІРѕРіРѕ
 							Set<String> torrentFiles = getFilesFromDecoded(
 									torrentFile, decoded);
-							// Парсим новый принятый файл
+							// РџР°СЂСЃРёРј РЅРѕРІС‹Р№ РїСЂРёРЅСЏС‚С‹Р№ С„Р°Р№Р»
+							torrentFIS = new FileInputStream(
+									downloadedTorrentFile);
 							Map<String, BEValue> decodedDownloaded = BDecoder
-									.bdecode(
-											new FileInputStream(
-													downloadedTorrentFile))
-									.getMap();
-							// Получаем список файлов из него
+									.bdecode(torrentFIS).getMap();
+							torrentFIS.close();
+							// РџРѕР»СѓС‡Р°РµРј СЃРїРёСЃРѕРє С„Р°Р№Р»РѕРІ РёР· РЅРµРіРѕ
 							Set<String> downloadedTorrentFiles = getFilesFromDecoded(
 									downloadedTorrentFile, decodedDownloaded);
-							List<String> newFiles = new ArrayList<>();
-							for (String file : torrentFiles) {
-								if (!downloadedTorrentFiles.contains(file)) {
-									newFiles.add(file);
+							if ((torrentFiles != null)
+									&& (downloadedTorrentFiles != null)) {
+								for (String file : downloadedTorrentFiles) {
+									if (!torrentFiles.contains(file)) {
+										newFiles.add(file);
+									}
 								}
+							} else {
+								// Р—РЅР°С‡РёС‚ - РґСѓСЂР°С†РєР°СЏ СЃРёС‚СѓР°С†РёСЏ, С‡С‚Рѕ СЂР°Р·РґРµР»Р°
+								// С„Р°Р№Р»РѕРІ РЅРµС‚ - РЅР°РґРѕ РїСЂРѕСЃС‚Рѕ РїСѓСЃРєР°С‚СЊ РµРіРѕ
+								// СЃРєР°С‡РёРІР°С‚СЊСЃСЏ
+								newFiles.add(torrentFile.toString());
 							}
-							// Проверяем на появление чего-то нового
-							if (newFiles.size() > 0) {
-								// Отлично! Значит в скачанном торренте есть
-								// что-то новое!
-								// Первое - запускаем рассылку о том, что
-								// скачано новое
-								fireMailAnnounce(
-										downloadedTorrentFile.getName(),
-										newFiles);
-								// Удаляем старый файл
+							// РџСЂРѕРІРµСЂСЏРµРј РЅР° РїРѕСЏРІР»РµРЅРёРµ С‡РµРіРѕ-С‚Рѕ РЅРѕРІРѕРіРѕ
+							if ((!isFileInQueue) || (newFiles.size() > 0)) {
+								// РџРµСЂРІРѕРµ - Р·Р°РїСѓСЃРєР°РµРј СЂР°СЃСЃС‹Р»РєСѓ Рѕ С‚РѕРј, С‡С‚Рѕ
+								// СЃРєР°С‡Р°РЅРѕ РЅРѕРІРѕРµ
+								if (!isFileInQueue) {
+									// Р¤Р°Р№Р» РЅРѕРІС‹Р№ - РЅР°РґРѕ РїСЂРѕСЃС‚Рѕ РїРѕСЃС‚Р°РІРёС‚СЊ РЅР°
+									// Р·Р°РєР°С‡РєСѓ
+									fireMailAnnounce(
+											downloadedTorrentFile.getName(),
+											null);
+								} else {
+									// Р¤Р°Р№Р» СЃС‚Р°СЂС‹Р№ - РЅРѕ РµСЃС‚СЊ РёР·РјРµРЅРµРЅРёСЏ
+									fireMailAnnounce(
+											downloadedTorrentFile.getName(),
+											newFiles);
+								}
+								// РЈРґР°Р»СЏРµРј СЃС‚Р°СЂС‹Р№ С„Р°Р№Р»
 								torrentFile.delete();
-								// Копируем на его место новый файл
+								// РљРѕРїРёСЂСѓРµРј РЅР° РµРіРѕ РјРµСЃС‚Рѕ РЅРѕРІС‹Р№ С„Р°Р№Р»
 								org.apache.commons.io.FileUtils.copyFile(
 										downloadedTorrentFile, torrentFile);
-								// Теперь копируем этот же файл в autoload
+								// РўРµРїРµСЂСЊ РєРѕРїРёСЂСѓРµРј СЌС‚РѕС‚ Р¶Рµ С„Р°Р№Р» РІ autoload
 								org.apache.commons.io.FileUtils.copyFile(
 										torrentFile,
 										new File(Commons.getAutoloadPath()
-												+ File.pathSeparator
 												+ torrentFile.getName()));
+								// РџСЂР°РІРёРј РІРѕР·РІСЂР°С‰Р°РµРјС‹Р№ СЂРµР·СѓР»СЊС‚Р°С‚
+								if (!isFileInQueue) {
+									res = FileProcessingResult.NEW;
+								} else {
+									res = FileProcessingResult.MODIFYED;
+								}
 							}
 						}
-						// Удаляем скачанный торрент
+						// РЈРґР°Р»СЏРµРј СЃРєР°С‡Р°РЅРЅС‹Р№ С‚РѕСЂСЂРµРЅС‚
 						downloadedTorrentFile.delete();
+					} else {
+						throw new TorrentDownloaderException(
+								"Р‘РђР“! РўРѕСЂСЂРµРЅС‚ СЃРєР°С‡Р°РЅ, РЅРѕ С„Р°Р№Р» РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚! o_O");
 					}
+				} else {
+					throw new TorrentDownloaderException(
+							"РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ С‚РѕСЂСЂРµРЅС‚ СЃ СЃР°Р№С‚Р°. РџСЂРѕРІРµСЂСЊС‚Рµ РёРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РїР°СЂРѕР»СЊ");
 				}
 			}
+		} else {
+			throw new TorrentDownloaderException(
+					"Р’ С‚РѕСЂСЂРµРЅС‚-С„Р°Р№Р»Рµ РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ Р±Р»РѕРє \"comment\"");
 		}
+		return res;
 	}
 
 	/**
-	 * Выполняет отсылку письма о том, что найдено чойта новое
+	 * Р’С‹РїРѕР»РЅСЏРµС‚ РѕС‚СЃС‹Р»РєСѓ РїРёСЃСЊРјР° Рѕ С‚РѕРј, С‡С‚Рѕ РЅР°Р№РґРµРЅРѕ С‡РѕР№С‚Р° РЅРѕРІРѕРµ
 	 * 
 	 * @param name
-	 *            Имя файла торрента
+	 *            РРјСЏ С„Р°Р№Р»Р° С‚РѕСЂСЂРµРЅС‚Р°
 	 * @param newFiles
-	 *            Список новых файлов в торренте
+	 *            РЎРїРёСЃРѕРє РЅРѕРІС‹С… С„Р°Р№Р»РѕРІ РІ С‚РѕСЂСЂРµРЅС‚Рµ (null - РµСЃР»Рё С‚РѕСЂСЂРµРЅС‚ РїСЂРѕСЃС‚Рѕ
+	 *            РЅРѕРІС‹Р№)
 	 */
 	private void fireMailAnnounce(String name, List<String> newFiles) {
-		// TODO Допилить
-
+		// TODO Р”РѕРїРёР»РёС‚СЊ
+		// Р’С‹РґР°РґРёРј РґР»СЏ РѕС‚Р»Р°РґРєРё
+		System.out.println("!! fireMailAnnounce !! ");
+		System.out.println("name = " + name);
+		if (newFiles != null) {
+			System.out.print("newFiles=");
+			for (String file : newFiles) {
+				System.out.print(file + "; ");
+			}
+		} else {
+			System.out.println("New torrent!");
+		}
+		System.out.println();
 	}
 
 	/**
-	 * Получение списка файлов из декодированного торрента
+	 * РџРѕР»СѓС‡РµРЅРёРµ СЃРїРёСЃРєР° С„Р°Р№Р»РѕРІ РёР· РґРµРєРѕРґРёСЂРѕРІР°РЅРЅРѕРіРѕ С‚РѕСЂСЂРµРЅС‚Р°
 	 * 
 	 * @param torrentFile
-	 *            Файл с торрентом (нужен для обработки однофайловых торрентов)
+	 *            Р¤Р°Р№Р» СЃ С‚РѕСЂСЂРµРЅС‚РѕРј (РЅСѓР¶РµРЅ РґР»СЏ РѕР±СЂР°Р±РѕС‚РєРё РѕРґРЅРѕС„Р°Р№Р»РѕРІС‹С… С‚РѕСЂСЂРµРЅС‚РѕРІ)
 	 * @param decoded
-	 *            Декодированный торент
-	 * @return Список файлов в торренте
+	 *            Р”РµРєРѕРґРёСЂРѕРІР°РЅРЅС‹Р№ С‚РѕСЂРµРЅС‚
+	 * @return РЎРїРёСЃРѕРє С„Р°Р№Р»РѕРІ РІ С‚РѕСЂСЂРµРЅС‚Рµ РёР»Рё null - РµСЃР»Рё СЂР°Р·РґРµР»Р° files РІ decoded
+	 *         РЅР°Р№С‚Рё РЅРµ СѓРґР°Р»РѕСЃСЊ
 	 * @throws InvalidBEncodingException
+	 *             Р’ СЃР»СѓС‡Р°Рµ РІРѕР·РЅРёРєРЅРѕРІРµРЅРёСЏ РїСЂРѕР±Р»РµРј РїСЂРё РїР°СЂСЃРёРЅРіРµ СЃС‚СЂРѕРє
 	 */
-	private Set<String> getFilesFromDecoded(File torrentFile,
+	public Set<String> getFilesFromDecoded(File torrentFile,
 			Map<String, BEValue> decoded) throws InvalidBEncodingException {
-		Set<String> torrentFiles = new HashSet<>();
-		// Загружаем список файлов из текущего торрента
+		Set<String> torrentFiles = null;
+		// Р—Р°РіСЂСѓР¶Р°РµРј СЃРїРёСЃРѕРє С„Р°Р№Р»РѕРІ РёР· С‚РµРєСѓС‰РµРіРѕ С‚РѕСЂСЂРµРЅС‚Р°
 		if (decoded.containsKey("files")) {
+			torrentFiles = new HashSet<>();
 			for (BEValue file : decoded.get("files").getList()) {
 				Map<String, BEValue> fileInfo = file.getMap();
 				StringBuilder path = new StringBuilder();
@@ -196,75 +255,24 @@ public class TorrentDownloader {
 				torrentFiles.add(path.toString());
 			}
 		} else {
-			torrentFiles.add(torrentFile.getName());
+			// РџРѕРїСЂРѕР±СѓРµРј РїСЂРѕР№С‚РёСЃСЊ РїРѕ РІСЃРµРј РєР»СЋС‡Р°Рј Рё РїСЂРѕРІРµСЂРёС‚СЊ - Р° РІРґСЂСѓРі С‚Р°Рј РµС‰Рµ
+			// РµСЃС‚СЊ РјР°РїС‹?
+			// Рђ С‚Рѕ РєР°Рє-С‚Рѕ РЅРµ РѕС‡РµРЅСЊ РїРѕРЅСЏС‚РЅРѕ РіРґРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ Р±Р»РѕРє files - С‚РѕР»Рё РІ
+			// РіРѕР»РѕРІРЅРѕР№ РјР°РїРµ, С‚РѕР»Рё РІ info
+			// РџРµСЂРµР±РґРёРј, РєРѕСЂРѕС‡Рµ
+			for (BEValue val : decoded.values()) {
+				if (val.getValue() instanceof Map) {
+					// Р—РЅР°С‡РёС‚ СЌС‚Рѕ РµС‰Рµ РѕРґРЅР° РјР°РїР° - РїРѕРїСЂРѕР±СѓРµРј РІ РµР№ РїРѕРёСЃРєР°С‚СЊ files
+					torrentFiles = getFilesFromDecoded(torrentFile,
+							val.getMap());
+					if (torrentFiles != null) {
+						// РќР°С€Р»Рё
+						break;
+					}
+				}
+			}
 		}
 		return torrentFiles;
-	}
-
-	/**
-	 * Вспомогательный класс, обеспечивающий хранение пары username - password
-	 * 
-	 * @author admin
-	 * 
-	 */
-	public static class User {
-
-		/**
-		 * Имя пользователя
-		 */
-		private String userName;
-		/**
-		 * Пароль
-		 */
-		private String password;
-
-		/**
-		 * Default constructor
-		 * 
-		 * @param userName
-		 * @param password
-		 */
-		public User(String userName, String password) {
-			this.userName = userName;
-			this.password = password;
-		}
-
-		/**
-		 * @return the userName
-		 */
-		public String getUserName() {
-			return userName;
-		}
-
-		/**
-		 * @return the password
-		 */
-		public String getPassword() {
-			return password;
-		}
-
-	}
-
-	/**
-	 * Вспомогательный класс для exception'ов, произошедших при обработке
-	 * торрента
-	 * 
-	 * @author admin
-	 */
-	public static class TorrentDownloaderException extends Exception {
-
-		/**
-		 * for serialization
-		 */
-		private static final long serialVersionUID = -2771650402084251961L;
-
-		/**
-		 * @param message
-		 */
-		public TorrentDownloaderException(String message) {
-			super(message);
-		}
-
 	}
 
 }

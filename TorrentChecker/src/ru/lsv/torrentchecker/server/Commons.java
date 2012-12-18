@@ -1,16 +1,19 @@
 /**
- * Общие настройки сервиса и web (конфигурация, контролируемые торренты and so on)
+ * РћР±С‰РёРµ РЅР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР° Рё web (РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ, РєРѕРЅС‚СЂРѕР»РёСЂСѓРµРјС‹Рµ С‚РѕСЂСЂРµРЅС‚С‹ and so on)
  */
 package ru.lsv.torrentchecker.server;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 
+import ru.lsv.torrentchecker.shared.User;
+import ru.lsv.torrentchecker.shared.WorkingResult;
+
 /**
- * Общие настройки сервиса и web (конфигурация, контролируемые торренты and so
+ * РћР±С‰РёРµ РЅР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР° Рё web (РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ, РєРѕРЅС‚СЂРѕР»РёСЂСѓРµРјС‹Рµ С‚РѕСЂСЂРµРЅС‚С‹ and so
  * on)
  * 
  * @author admin
@@ -18,21 +21,33 @@ import java.util.Properties;
 public class Commons {
 
 	/**
-	 * Путь для временной загрузки торрентов
+	 * РџСѓС‚СЊ РґР»СЏ РІСЂРµРјРµРЅРЅРѕР№ Р·Р°РіСЂСѓР·РєРё С‚РѕСЂСЂРµРЅС‚РѕРІ
 	 */
 	private static String tempPath;
 	/**
-	 * Путь, откуда торренты автоматически загружаются в checker
+	 * РџСѓС‚СЊ, РѕС‚РєСѓРґР° С‚РѕСЂСЂРµРЅС‚С‹ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё Р·Р°РіСЂСѓР¶Р°СЋС‚СЃСЏ РІ checker
 	 */
 	private static String autoloadPath;
 	/**
-	 * Путь, где лежать все торренты за которыми идет наблюдение
+	 * РџСѓС‚СЊ, РіРґРµ Р»РµР¶Р°С‚СЊ РІСЃРµ С‚РѕСЂСЂРµРЅС‚С‹ Р·Р° РєРѕС‚РѕСЂС‹РјРё РёРґРµС‚ РЅР°Р±Р»СЋРґРµРЅРёРµ
 	 */
 	private static String torrentsPath;
 	/**
-	 * Путь автоматический загрузки торрента торрент клиентом
+	 * РџСѓС‚СЊ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРёР№ Р·Р°РіСЂСѓР·РєРё С‚РѕСЂСЂРµРЅС‚Р° С‚РѕСЂСЂРµРЅС‚ РєР»РёРµРЅС‚РѕРј
 	 */
-	private static String torrentsAutoloadPath;
+	private static String torrentsInQueue;
+	/**
+	 * РРјРµРЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ СЃ РїР°СЂРѕР»СЏРјРё
+	 */
+	private static volatile Map<String, User> credentials;
+	/**
+	 * РРјСЏ РґРёСЂРµРєС‚РѕСЂРёРё, РіРґРµ Р»РµР¶РёС‚ РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ
+	 */
+	private static String configPath;
+	/**
+	 * Р РµР·СѓР»СЊС‚Р°С‚ РѕР±СЂР°Р±РѕС‚РєРё СЃРїРёСЃРєР° С‚РѕСЂСЂРµРЅС‚РѕРІ
+	 */
+	private static volatile WorkingResult workingResult;
 
 	/**
 	 * @return the tempPath
@@ -58,52 +73,118 @@ public class Commons {
 	/**
 	 * @return the torrentsAutoloadPath
 	 */
-	public static String getTorrentsAutoloadPath() {
-		return torrentsAutoloadPath;
+	public static String getTorrentsInQueue() {
+		return torrentsInQueue;
 	}
 
 	/**
-	 * Осуществляет загрузку конфигурации из указанного места <br>
-	 * По умолчанию конфигурация пытается читаться из system property
+	 * @return the credentials
+	 */
+	public static Map<String, User> getCredentials() {
+		return credentials;
+	}
+
+	/**
+	 * @param creds
+	 *            the credentials to set
+	 */
+	public static void setCredentials(Map<String, User> creds) {
+		credentials = creds;
+	}
+
+	/**
+	 * @return the workingResult
+	 */
+	public static WorkingResult getWorkingResult() {
+		return workingResult;
+	}
+
+	/**
+	 * @param workingResult the workingResult to set
+	 */
+	public static void setWorkingResult(WorkingResult workingResult) {
+		Commons.workingResult = workingResult;
+	}
+
+	/**
+	 * РћСЃСѓС‰РµСЃС‚РІР»СЏРµС‚ Р·Р°РіСЂСѓР·РєСѓ РєРѕРЅС„РёРіСѓСЂР°С†РёРё РёР· СѓРєР°Р·Р°РЅРЅРѕРіРѕ РјРµСЃС‚Р° <br>
+	 * РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ РїС‹С‚Р°РµС‚СЃСЏ С‡РёС‚Р°С‚СЊСЃСЏ РёР· system property
 	 * "storagePath"
 	 * 
-	 * @param configPath
-	 *            Откуда читать конфигурацию. Если null - будет пытаться читать
-	 *            из system property "storagePath"
+	 * @param confPath
+	 *            РћС‚РєСѓРґР° С‡РёС‚Р°С‚СЊ РєРѕРЅС„РёРіСѓСЂР°С†РёСЋ. Р•СЃР»Рё null - Р±СѓРґРµС‚ РїС‹С‚Р°С‚СЊСЃСЏ С‡РёС‚Р°С‚СЊ
+	 *            РёР· system property "storagePath"
 	 */
-	public static void loadConfig(String configPath) throws ConfigLoadException {
-		if (configPath == null) {
-			configPath = System.getProperty("storagePath");
+	public static void loadConfig(String confPath) throws ConfigLoadException {
+		if (confPath == null) {
+			confPath = System.getProperty("storagePath");
 		}
-		// Загружаем пути
-		if (configPath == null) {
+		// Р—Р°РіСЂСѓР¶Р°РµРј РїСѓС‚Рё
+		if (confPath == null) {
 			throw new ConfigLoadException(
 					"Missed config location (via parameter AND via system property)");
 		}
-		File paths = new File(configPath + File.pathSeparator
-				+ "paths.properties");
+		configPath = confPath;
+		File paths = new File(confPath + File.separator + "paths.properties");
 		if (paths.exists()) {
 			Properties props = new Properties();
 			try {
 				props.load(new FileInputStream(paths));
 			} catch (IOException e) {
-				// Ничего не грузим - молча выходим
+				// РќРёС‡РµРіРѕ РЅРµ РіСЂСѓР·РёРј - РјРѕР»С‡Р° РІС‹С…РѕРґРёРј
 				throw new ConfigLoadException(
 						"IOException on loading paths.properties");
 			}
-			tempPath = props.getProperty("temp");
-			autoloadPath = props.getProperty("autoload");
-			torrentsPath = props.getProperty("torrents");
-			torrentsAutoloadPath = props.getProperty("torrents_autoload");
+			try {
+				tempPath = new File(props.getProperty("temp"))
+						.getCanonicalPath() + File.separator;
+				autoloadPath = new File(props.getProperty("autoload"))
+						.getCanonicalPath() + File.separator;
+				torrentsPath = new File(props.getProperty("torrents"))
+						.getCanonicalPath() + File.separator;
+				torrentsInQueue = new File(
+						props.getProperty("torrents_inqueue"))
+						.getCanonicalPath()
+						+ File.separator;
+			} catch (IOException e) {
+				throw new ConfigLoadException("Failed to normalize paths");
+			}
+		}
+		try {
+			credentials = Credentials.getInstance().loadCredentials(
+					new File(configPath + File.separator
+							+ "credentials.properties"));
+		} catch (IOException e) {
+			// Rethrow РїРѕРґ РґСЂСѓРіРёРј РёРјРµРЅРµРј
+			throw new ConfigLoadException(e.getMessage());
 		}
 	}
 
 	/**
-	 * Вспомогательный класс - выдача сообщений об ошибках загрузки конфигурации
+	 * РЎРѕС…СЂР°РЅСЏРµС‚ РёРјРµРЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ Рё РїР°СЂРѕР»Рё
+	 * 
+	 * @throws IOException
+	 *             Р’ СЃР»СѓС‡Р°Рµ РѕС€РёР±РєРё Р·Р°РїРёСЃРё
+	 */
+	public static void saveCredentials() throws IOException {
+		Credentials.getInstance()
+				.saveCredentials(
+						credentials,
+						new File(configPath + File.separator
+								+ "credentials.properties"));
+	}
+
+	/**
+	 * Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Р№ РєР»Р°СЃСЃ - РІС‹РґР°С‡Р° СЃРѕРѕР±С‰РµРЅРёР№ РѕР± РѕС€РёР±РєР°С… Р·Р°РіСЂСѓР·РєРё РєРѕРЅС„РёРіСѓСЂР°С†РёРё
 	 * 
 	 * @author admin
 	 */
 	public static class ConfigLoadException extends Exception {
+
+		/**
+		 * For serialization
+		 */
+		private static final long serialVersionUID = -8740996439183442067L;
 
 		/**
 		 * Default constructor
