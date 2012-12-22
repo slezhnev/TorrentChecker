@@ -4,7 +4,6 @@
 package ru.lsv.torrentchecker.server;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
 
 import ru.lsv.torrentchecker.server.Commons.ConfigLoadException;
 import ru.lsv.torrentchecker.server.torrents.TorrentDownloader;
@@ -63,6 +62,8 @@ public class TorrentCheckerSheduler implements ServletContextListener, Runnable 
 			// Создаем результат работы с ошибкой.
 			// До перезапуска сервиса он и будет висеть постоянно - поскольку
 			// шедулер не запустится
+			System.out.println("contextInitialized - exception - "
+					+ e.getMessage());
 			Commons.setWorkingResult(new WorkingResult(e.getMessage()));
 			return;
 		}
@@ -82,24 +83,20 @@ public class TorrentCheckerSheduler implements ServletContextListener, Runnable 
 	/**
 	 * Основной обработчик <br/>
 	 * Сделан синхронным - поскольку его запуск может быть зафорсен (т.е. чтобы
-	 * не работало их ДВА одновременно) <br>
+	 * не работало их ДВА одновременно)
 	 */
 	public static synchronized void service() {
+		System.out.println("Torrent checker - sheduler started");
 		// Получаем список файлов в Commons.getTorrentsPath
 		// Принимаем только файлы с расширением .torrent
 		String[] torrents = new File(Commons.getTorrentsPath())
-				.list(new FilenameFilter() {
-					@Override
-					public boolean accept(File dir, String name) {
-						return "torrent".equals(FilenameUtils
-								.getExtension(name));
-					}
-				});
+				.list(new SuffixFileFilter(".torrent"));
 		// Теперь пройдемся по ним - и обработаем каждый
 		TorrentDownloader downloader = new TorrentDownloader();
 		List<FileResult> results = new ArrayList<>();
 		for (String torrent : torrents) {
 			try {
+				System.out.println("Torrent checker - process " + torrent);
 				FileProcessingResult res = downloader.check(
 						new File(Commons.getTorrentsPath() + torrent),
 						Commons.getCredentials(), Commons.getTempPath(),
@@ -117,5 +114,6 @@ public class TorrentCheckerSheduler implements ServletContextListener, Runnable 
 		}
 		// Сохраняем результат
 		Commons.setWorkingResult(new WorkingResult(results));
+		System.out.println("Torrent checker - sheduler finished");
 	}
 }
