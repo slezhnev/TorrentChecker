@@ -189,6 +189,11 @@ public class TorrentDownloader {
 										torrentFile,
 										new File(Commons.getAutoloadPath()
 												+ torrentFile.getName()));
+								// И копируем его в inqueue
+								org.apache.commons.io.FileUtils.copyFile(
+										torrentFile,
+										new File(Commons.getTorrentsInQueue()
+												+ torrentFile.getName()));
 								// Правим возвращаемый результат
 								if (!isFileInQueue) {
 									res = FileProcessingResult.NEW;
@@ -258,10 +263,14 @@ public class TorrentDownloader {
 				StringBuffer str = new StringBuffer();
 				str.append("<html><head><title>").append(message.getSubject())
 						.append("</title></head><body>");
-				str.append("Новые файлы в торренте ").append(name)
-						.append(": <p/>");
-				for (String file : newFiles) {
-					str.append(file).append("<br/>");
+				if (newFiles != null) {
+					str.append("Новые файлы в торренте ").append(name)
+							.append(": <p/>");
+					for (String file : newFiles) {
+						str.append(file).append("<br/>");
+					}
+				} else {
+					str.append("Новый торрент - добавлен в закачки");
 				}
 				str.append("\n</body></html>");
 				message.setDataHandler(new DataHandler(new ByteArrayDataSource(

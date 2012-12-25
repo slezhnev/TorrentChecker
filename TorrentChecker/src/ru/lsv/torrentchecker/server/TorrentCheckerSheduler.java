@@ -28,12 +28,29 @@ import ru.lsv.torrentchecker.shared.WorkingResult.FileResult;
  * 
  * @author admin
  */
-public class TorrentCheckerSheduler implements ServletContextListener, Runnable {
+public class TorrentCheckerSheduler implements ServletContextListener {
 
 	/**
 	 * Шедулер
 	 */
-	private ScheduledExecutorService scheduler;
+	private static volatile ScheduledExecutorService scheduler = null;
+
+	/**
+	 * @return the scheduler
+	 */
+	public static synchronized ScheduledExecutorService getScheduler() {
+		if (scheduler == null) {
+			scheduler = Executors.newSingleThreadScheduledExecutor();
+			scheduler.scheduleWithFixedDelay(new Runnable() {
+				@Override
+				public void run() {
+					service();
+				}
+
+			}, 0, 3, TimeUnit.HOURS);
+		}
+		return scheduler;
+	}
 
 	/**
 	 * см.описание
@@ -44,7 +61,9 @@ public class TorrentCheckerSheduler implements ServletContextListener, Runnable 
 	@Override
 	public void contextDestroyed(ServletContextEvent arg0) {
 		// Тормозим все
-		scheduler.shutdownNow();
+		if (!getScheduler().isShutdown()) {
+			scheduler.shutdownNow();
+		}
 	}
 
 	/**
@@ -68,16 +87,11 @@ public class TorrentCheckerSheduler implements ServletContextListener, Runnable 
 			return;
 		}
 		// Создаем шедулер и запускаем его в работу
-		scheduler = Executors.newSingleThreadScheduledExecutor();
-		scheduler.scheduleWithFixedDelay(this, 0, 3, TimeUnit.HOURS);
-	}
-
-	/**
-	 * Обработчик шедулера
-	 */
-	@Override
-	public void run() {
-		service();
+		/*
+		 * scheduler = Executors.newSingleThreadScheduledExecutor();
+		 * scheduler.scheduleWithFixedDelay(this, 0, 3, TimeUnit.HOURS);
+		 */
+		getScheduler();
 	}
 
 	/**
@@ -116,4 +130,5 @@ public class TorrentCheckerSheduler implements ServletContextListener, Runnable 
 		Commons.setWorkingResult(new WorkingResult(results));
 		System.out.println("Torrent checker - sheduler finished");
 	}
+
 }
