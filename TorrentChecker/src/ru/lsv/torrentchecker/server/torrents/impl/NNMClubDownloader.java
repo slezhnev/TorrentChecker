@@ -1,5 +1,5 @@
 /**
- * Обеспечивает реализацию интерфейса загрузки с nnm-club.ru
+ * Обеспечивает реализацию интерфейса загрузки с nnm-club.me
  */
 package ru.lsv.torrentchecker.server.torrents.impl;
 
@@ -36,7 +36,7 @@ import ru.lsv.torrentchecker.server.torrents.TorrentDownloaderException;
 import ru.lsv.torrentchecker.server.torrents.TorrentDownloaderInterface;
 
 /**
- * Обеспечивает реализацию интерфейса загрузки с nnm-club.ru
+ * Обеспечивает реализацию интерфейса загрузки с nnm-club.me
  * 
  * @author admin
  */
@@ -50,7 +50,7 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 	 */
 	@Override
 	public String getResource() {
-		return "nnm-club.ru";
+		return "nnm-club.me";
 	}
 
 	/**
@@ -74,7 +74,7 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 		HttpContext httpContext = new BasicHttpContext();
 		httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
 		//
-		HttpPost httpost = new HttpPost("http://nnm-club.ru/forum/login.php");
+		HttpPost httpost = new HttpPost("http://nnm-club.me/forum/login.php");
 
 		List<NameValuePair> authFornParams = new ArrayList<NameValuePair>();
 		authFornParams.add(new BasicNameValuePair("username", userName));
@@ -99,7 +99,7 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 			// Тут что-то сломалось. Выходим
 			httpclient.getConnectionManager().shutdown();
 			throw new TorrentDownloaderException(
-					"Ошибка авторизации - ошибка выполнения post запроса на логин");
+					"Ошибка авторизации - ошибка выполнения post запроса на логин (" + e.getMessage() + ")");
 		}
 
 		httpost.abort();
@@ -118,7 +118,7 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 			// Тут что-то сломалось. Выходим
 			httpclient.getConnectionManager().shutdown();
 			throw new TorrentDownloaderException(
-					"Ошибка получения страницы с описанием торрента");
+					"Ошибка получения страницы с описанием торрента (" + e.getMessage() + ")");
 		}
 		HttpEntity entity = response.getEntity();
 		if (entity == null) {
@@ -140,7 +140,7 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 		} catch (IOException e) {
 			httpclient.getConnectionManager().shutdown();
 			throw new TorrentDownloaderException(
-					"Ошибка разбора страницы форума - ошибка получения страницы");
+					"Ошибка разбора страницы форума - ошибка получения страницы (" + e.getMessage() + ")");
 		}
 		if (!matcher.find()) {
 			// Опять что-то странное
@@ -152,7 +152,7 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 		// Нафиг грохнем " - и все будет хорошо
 		String downloadLink = matcher.group().replaceAll("\"", "");
 		httpGet.abort();
-		httpGet = new HttpGet("http://nnm-club.ru/forum/" + downloadLink);
+		httpGet = new HttpGet("http://nnm-club.me/forum/" + downloadLink);
 		try {
 			response = httpclient.execute(httpGet, httpContext);
 		} catch (Exception e) {
@@ -185,11 +185,11 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 			// Опять что-то странное
 			httpclient.getConnectionManager().shutdown();
 			throw new TorrentDownloaderException(
-					"Ошибка аохранения торрента - FileNotFoundException o_O");
+					"Ошибка сохранения торрента - FileNotFoundException o_O");
 		} catch (IOException e) {
 			httpclient.getConnectionManager().shutdown();
 			throw new TorrentDownloaderException(
-					"Ошибка аохранения торрента - ошибка ввода вывода. Может место кончилось?");
+					"Ошибка сохранения торрента - ошибка ввода вывода. Может место кончилось?");
 		}
 
 		httpclient.getConnectionManager().shutdown();
