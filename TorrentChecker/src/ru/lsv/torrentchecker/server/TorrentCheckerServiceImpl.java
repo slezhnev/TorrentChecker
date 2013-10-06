@@ -53,6 +53,13 @@ public class TorrentCheckerServiceImpl extends RemoteServiceServlet implements
 						}
 					}
 					torr.delete();
+					// Дополнительно - было бы неплохо удалить его из
+					// torrentsInQueue
+					File torrInQueue = new File(Commons.getTorrentsInQueue()
+							+ torrent);
+					if (torrInQueue.exists()) {
+						torrInQueue.delete();
+					}
 				}
 			}
 		}

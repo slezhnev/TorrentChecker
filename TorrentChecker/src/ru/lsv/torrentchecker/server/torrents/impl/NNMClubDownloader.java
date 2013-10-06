@@ -38,7 +38,7 @@ import ru.lsv.torrentchecker.server.torrents.TorrentDownloaderInterface;
 /**
  * Обеспечивает реализацию интерфейса загрузки с nnm-club.me
  * 
- * @author admin
+ * @author s.lezhnev
  */
 public class NNMClubDownloader implements TorrentDownloaderInterface {
 
@@ -74,7 +74,8 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 		HttpContext httpContext = new BasicHttpContext();
 		httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
 		//
-		HttpPost httpost = new HttpPost("http://nnm-club.me/forum/login.php");
+		HttpPost httpost = new HttpPost("http://" + getResource()
+				+ "/forum/login.php");
 
 		List<NameValuePair> authFornParams = new ArrayList<NameValuePair>();
 		authFornParams.add(new BasicNameValuePair("username", userName));
@@ -99,7 +100,8 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 			// Тут что-то сломалось. Выходим
 			httpclient.getConnectionManager().shutdown();
 			throw new TorrentDownloaderException(
-					"Ошибка авторизации - ошибка выполнения post запроса на логин (" + e.getMessage() + ")");
+					"Ошибка авторизации - ошибка выполнения post запроса на логин ("
+							+ e.getMessage() + ")");
 		}
 
 		httpost.abort();
@@ -118,7 +120,8 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 			// Тут что-то сломалось. Выходим
 			httpclient.getConnectionManager().shutdown();
 			throw new TorrentDownloaderException(
-					"Ошибка получения страницы с описанием торрента (" + e.getMessage() + ")");
+					"Ошибка получения страницы с описанием торрента ("
+							+ e.getMessage() + ")");
 		}
 		HttpEntity entity = response.getEntity();
 		if (entity == null) {
@@ -140,7 +143,8 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 		} catch (IOException e) {
 			httpclient.getConnectionManager().shutdown();
 			throw new TorrentDownloaderException(
-					"Ошибка разбора страницы форума - ошибка получения страницы (" + e.getMessage() + ")");
+					"Ошибка разбора страницы форума - ошибка получения страницы ("
+							+ e.getMessage() + ")");
 		}
 		if (!matcher.find()) {
 			// Опять что-то странное
@@ -152,7 +156,8 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 		// Нафиг грохнем " - и все будет хорошо
 		String downloadLink = matcher.group().replaceAll("\"", "");
 		httpGet.abort();
-		httpGet = new HttpGet("http://nnm-club.me/forum/" + downloadLink);
+		httpGet = new HttpGet("http://" + getResource() + "/forum/"
+				+ downloadLink);
 		try {
 			response = httpclient.execute(httpGet, httpContext);
 		} catch (Exception e) {
@@ -175,8 +180,8 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 				+ ".torrent";
 		if ((headers != null) && (headers.length == 1)
 				&& (headers[0].getValue().indexOf("=") != -1)) {
-			saveToFile = headers[0].getValue().split("=")[1]
-					.replaceAll("\"", "");
+			saveToFile = headers[0].getValue().split("=")[1].replaceAll("\"",
+					"");
 		}
 		saveToFile = pathToDownload + saveToFile;
 		try {

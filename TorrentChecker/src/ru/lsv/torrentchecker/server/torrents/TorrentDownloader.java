@@ -31,6 +31,7 @@ import ru.lsv.torrentchecker.server.Commons;
 import ru.lsv.torrentchecker.server.bcodec.BDecoder;
 import ru.lsv.torrentchecker.server.bcodec.BEValue;
 import ru.lsv.torrentchecker.server.bcodec.InvalidBEncodingException;
+import ru.lsv.torrentchecker.server.torrents.impl.IPv6NNMClubDownloader;
 import ru.lsv.torrentchecker.server.torrents.impl.NNMClubDownloader;
 import ru.lsv.torrentchecker.shared.User;
 import ru.lsv.torrentchecker.shared.WorkingResult.FileProcessingResult;
@@ -53,6 +54,7 @@ public class TorrentDownloader {
 	public TorrentDownloader() {
 		// Создаем внутренний список
 		downloaders.add(new NNMClubDownloader());
+		downloaders.add(new IPv6NNMClubDownloader());
 	}
 
 	/**
