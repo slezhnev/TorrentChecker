@@ -24,6 +24,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
@@ -74,18 +75,23 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 		HttpContext httpContext = new BasicHttpContext();
 		httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
 		//
+		HttpResponse response;
+		HttpGet httpGet;
+		HttpEntity entity;
+		//
+		// Логинимся
 		HttpPost httpost = new HttpPost("http://" + getResource()
 				+ "/forum/login.php");
 
-		List<NameValuePair> authFornParams = new ArrayList<NameValuePair>();
-		authFornParams.add(new BasicNameValuePair("username", userName));
-		authFornParams.add(new BasicNameValuePair("password", password));
-		authFornParams.add(new BasicNameValuePair("autologin", "off"));
-		authFornParams.add(new BasicNameValuePair("redirect", ""));
-		authFornParams.add(new BasicNameValuePair("login", "Вход"));
+		List<NameValuePair> authFormParams = new ArrayList<NameValuePair>();
+		authFormParams.add(new BasicNameValuePair("username", userName));
+		authFormParams.add(new BasicNameValuePair("password", password));
+		authFormParams.add(new BasicNameValuePair("autologin", "off"));
+		authFormParams.add(new BasicNameValuePair("redirect", ""));
+		authFormParams.add(new BasicNameValuePair("login", "Вход"));
 
 		try {
-			httpost.setEntity(new UrlEncodedFormEntity(authFornParams,
+			httpost.setEntity(new UrlEncodedFormEntity(authFormParams,
 					HTTP.UTF_8));
 		} catch (UnsupportedEncodingException e) {
 			httpclient.getConnectionManager().shutdown();
@@ -93,7 +99,6 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 					"Получили UnsupportedEncodingException на UTF-8 o_O");
 		}
 
-		HttpResponse response;
 		try {
 			response = httpclient.execute(httpost, httpContext);
 		} catch (Exception e) {
@@ -103,12 +108,32 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 					"Ошибка авторизации - ошибка выполнения post запроса на логин ("
 							+ e.getMessage() + ")");
 		}
-
+		entity = response.getEntity();
+		if (entity == null) {
+			// Опять что-то странное
+			httpclient.getConnectionManager().shutdown();
+			throw new TorrentDownloaderException(
+					"Ошибка получения страницы с описанием торрента - entity is null");
+		}
 		httpost.abort();
+		
+		// Выполняем запрос на страницу c sid
+		String sid = null;
+		// Ищем нужную куку
+		for (Cookie cookie : cookieStore.getCookies()) {
+			if ("phpbb2mysql_4_sid".equals(cookie.getName())) {
+				sid = cookie.getValue();
+				break;
+			}
+		}
+		if (sid == null) {
+			throw new TorrentDownloaderException(
+					"Ошибка получения страницы с описанием торрента - после логина не вернулась cookie phpbb2mysql_4_sid");
+		}
+		httpGet = null;
 		// Выполняем запрос на страницу - после удачной авторизации
-		HttpGet httpGet = null;
 		try {
-			httpGet = new HttpGet(url.toURI());
+			httpGet = new HttpGet(url.toURI() + "&sid=" + sid);
 		} catch (URISyntaxException e) {
 			httpclient.getConnectionManager().shutdown();
 			throw new TorrentDownloaderException(
@@ -123,7 +148,7 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 					"Ошибка получения страницы с описанием торрента ("
 							+ e.getMessage() + ")");
 		}
-		HttpEntity entity = response.getEntity();
+		entity = response.getEntity();
 		if (entity == null) {
 			// Опять что-то странное
 			httpclient.getConnectionManager().shutdown();
@@ -202,5 +227,4 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 		// http://stackoverflow.com/questions/10995378/httpurlconnection-downloaded-file-name
 		return saveToFile;
 	}
-
 }
