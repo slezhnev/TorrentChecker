@@ -19,33 +19,41 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
-import org.apache.http.client.CookieStore;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.protocol.ClientContext;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
+import ru.lsv.torrentchecker.server.torrents.TorrentDownloaderAbstract;
 import ru.lsv.torrentchecker.server.torrents.TorrentDownloaderException;
-import ru.lsv.torrentchecker.server.torrents.TorrentDownloaderInterface;
 
 /**
  * Обеспечивает реализацию интерфейса загрузки с torrent.rus.ec
  * 
  * @author s.lezhnev
  */
-public class TorrentRusEcDownloader implements TorrentDownloaderInterface {
+public class TorrentRusEcDownloader extends TorrentDownloaderAbstract {
+
+	/**
+	 * см. TorrentDownloaderAbstract
+	 * 
+	 * @param httpContextIn
+	 *            см. TorrentDownloaderAbstract
+	 * @throws TorrentDownloaderException
+	 *             см. TorrentDownloaderAbstract
+	 */
+	public TorrentRusEcDownloader(HttpContext httpContextIn)
+			throws TorrentDownloaderException {
+		super(httpContextIn);
+	}
 
 	/**
 	 * см.описание
 	 * 
-	 * @see ru.lsv.torrentchecker.server.torrents.TorrentDownloaderInterface#getResource
+	 * @see ru.lsv.torrentchecker.server.torrents.TorrentDownloaderAbstract#getResource
 	 *      ()
 	 */
 	@Override
@@ -53,30 +61,11 @@ public class TorrentRusEcDownloader implements TorrentDownloaderInterface {
 		return "torrent.rus.ec";
 	}
 
-	/**
-	 * см.описание
-	 * 
-	 * @throws TorrentDownloaderException
-	 *             В случае возникновения проблем со скачиванием
-	 * 
-	 * @see ru.lsv.torrentchecker.server.torrents.TorrentDownloaderInterface#
-	 *      downloadTorrent(java.net.URL, java.lang.String, java.lang.String,
-	 *      java.lang.String)
-	 */
 	@Override
-	public String downloadTorrent(URL url, String userName, String password,
-			String pathToDownload) throws TorrentDownloaderException {
-		// Тут все сложно.
+	public boolean authenticate(URL url, String userName, String password)
+			throws TorrentDownloaderException {
 		// Первое - делаем htpp-post запрос для авторизации
-		DefaultHttpClient httpclient = new DefaultHttpClient();
-		// Инициализируем cookie store
-		CookieStore cookieStore = new BasicCookieStore();
-		HttpContext httpContext = new BasicHttpContext();
-		httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
-		//
-		HttpResponse response;
-		HttpGet httpGet = null;
-		HttpEntity entity;
+		// HttpResponse response;
 		//
 		HttpPost httpost = new HttpPost("http://" + getResource()
 				+ "/login.php");
@@ -97,7 +86,8 @@ public class TorrentRusEcDownloader implements TorrentDownloaderInterface {
 		}
 
 		try {
-			response = httpclient.execute(httpost, httpContext);
+			// response = httpclient.execute(httpost, httpContext);
+			httpclient.execute(httpost, httpContext);
 		} catch (Exception e) {
 			// Тут что-то сломалось. Выходим
 			httpclient.getConnectionManager().shutdown();
@@ -107,6 +97,26 @@ public class TorrentRusEcDownloader implements TorrentDownloaderInterface {
 		}
 
 		httpost.abort();
+		return true;
+	}
+
+	/**
+	 * см.описание
+	 * 
+	 * @throws TorrentDownloaderException
+	 *             В случае возникновения проблем со скачиванием
+	 * 
+	 * @see ru.lsv.torrentchecker.server.torrents.TorrentDownloaderAbstract#
+	 *      downloadTorrent(java.net.URL, java.lang.String, java.lang.String,
+	 *      java.lang.String)
+	 */
+	@Override
+	public String downloadTorrent(URL url, String pathToDownload)
+			throws TorrentDownloaderException {
+		HttpResponse response;
+		HttpGet httpGet = null;
+		HttpEntity entity;
+		// Тут все сложно.
 		// Выполняем запрос на страницу - после удачной авторизации
 		try {
 			httpGet = new HttpGet(url.toURI());
@@ -196,8 +206,6 @@ public class TorrentRusEcDownloader implements TorrentDownloaderInterface {
 			throw new TorrentDownloaderException(
 					"Ошибка сохранения торрента - ошибка ввода вывода. Может место кончилось?");
 		}
-
-		httpclient.getConnectionManager().shutdown();
 
 		// http://stackoverflow.com/questions/10995378/httpurlconnection-downloaded-file-name
 		return saveToFile;

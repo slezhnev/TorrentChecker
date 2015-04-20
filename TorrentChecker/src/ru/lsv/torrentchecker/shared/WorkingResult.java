@@ -142,7 +142,7 @@ public class WorkingResult implements Serializable {
 		 */
 		private Date processingDate;
 		/**
-		 * Результат обреботки файла
+		 * Результат обработки файла
 		 */
 		private FileProcessingResult result;
 

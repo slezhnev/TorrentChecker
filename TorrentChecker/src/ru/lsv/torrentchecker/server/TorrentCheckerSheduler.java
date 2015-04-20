@@ -4,8 +4,8 @@
 package ru.lsv.torrentchecker.server;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -16,11 +16,11 @@ import javax.servlet.ServletContextListener;
 
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 
+import com.sun.istack.internal.logging.Logger;
+
 import ru.lsv.torrentchecker.server.Commons.ConfigLoadException;
-import ru.lsv.torrentchecker.server.torrents.TorrentDownloader;
-import ru.lsv.torrentchecker.server.torrents.TorrentDownloaderException;
+import ru.lsv.torrentchecker.server.torrents.TorrentsDownloader;
 import ru.lsv.torrentchecker.shared.WorkingResult;
-import ru.lsv.torrentchecker.shared.WorkingResult.FileProcessingResult;
 import ru.lsv.torrentchecker.shared.WorkingResult.FileResult;
 
 /**
@@ -34,6 +34,10 @@ public class TorrentCheckerSheduler implements ServletContextListener {
 	 * Шедулер
 	 */
 	private static volatile ScheduledExecutorService scheduler = null;
+	/**
+	 * Логгер
+	 */
+	private static Logger logger = Logger.getLogger(TorrentCheckerSheduler.class);
 
 	/**
 	 * @return the scheduler
@@ -41,7 +45,7 @@ public class TorrentCheckerSheduler implements ServletContextListener {
 	public static synchronized ScheduledExecutorService getScheduler() {
 		if (scheduler == null) {
 			scheduler = Executors.newSingleThreadScheduledExecutor();
-			scheduler.scheduleWithFixedDelay(new Runnable() {
+			scheduler.scheduleAtFixedRate(new Runnable() {
 				@Override
 				public void run() {
 					service();
@@ -81,8 +85,7 @@ public class TorrentCheckerSheduler implements ServletContextListener {
 			// Создаем результат работы с ошибкой.
 			// До перезапуска сервиса он и будет висеть постоянно - поскольку
 			// шедулер не запустится
-			System.out.println("contextInitialized - exception - "
-					+ e.getMessage());
+			logger.severe("contextInitialized exception ", e);
 			Commons.setWorkingResult(new WorkingResult(e.getMessage()));
 			return;
 		}
@@ -100,35 +103,23 @@ public class TorrentCheckerSheduler implements ServletContextListener {
 	 * не работало их ДВА одновременно)
 	 */
 	public static synchronized void service() {
-		System.out.println("Torrent checker - sheduler started");
+		logger.info("Torrent checker - sheduler started");
 		// Получаем список файлов в Commons.getTorrentsPath
 		// Принимаем только файлы с расширением .torrent
-		String[] torrents = new File(Commons.getTorrentsPath())
-				.list(new SuffixFileFilter(".torrent"));
+		String[] torrents = new File(Commons.getTorrentsPath()).list(new SuffixFileFilter(".torrent"));
 		// Теперь пройдемся по ним - и обработаем каждый
-		TorrentDownloader downloader = new TorrentDownloader();
-		List<FileResult> results = new ArrayList<>();
-		for (String torrent : torrents) {
-			try {
-				System.out.println("Torrent checker - process " + torrent);
-				FileProcessingResult res = downloader.check(
-						new File(Commons.getTorrentsPath() + torrent),
-						Commons.getCredentials(), Commons.getTempPath(),
-						Commons.getAutoloadPath());
-				// Хм. Ничего не вылетело. Значит добавляем в результат работы
-				// БЕЗ замечаний
-				results.add(new FileResult(torrent, res));
-			} catch (IOException e) {
-				results.add(new FileResult(torrent, "IOException: "
-						+ e.getMessage()));
-			} catch (TorrentDownloaderException e) {
-				results.add(new FileResult(torrent,
-						"TorrentDownloaderException: " + e.getMessage()));
-			}
-		}
+		TorrentsDownloader downloader = new TorrentsDownloader();
+		// Конвертируем в список файлов
+		List<File> files = new ArrayList<>();
+		Arrays.asList(torrents).forEach(fileName -> {
+			files.add(new File(Commons.getTorrentsPath() + fileName));
+		});
+		// Запускаем проверку
+		List<FileResult> results = downloader.check(files, Commons.getCredentials(), Commons.getTempPath(), Commons.getAutoloadPath());
+
 		// Сохраняем результат
 		Commons.setWorkingResult(new WorkingResult(results));
-		System.out.println("Torrent checker - sheduler finished");
+		logger.info("Torrent checker - sheduler finished");
 	}
 
 }

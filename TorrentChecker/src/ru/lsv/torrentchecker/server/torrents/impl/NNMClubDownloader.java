@@ -19,34 +19,42 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
-import org.apache.http.client.CookieStore;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
+import ru.lsv.torrentchecker.server.torrents.TorrentDownloaderAbstract;
 import ru.lsv.torrentchecker.server.torrents.TorrentDownloaderException;
-import ru.lsv.torrentchecker.server.torrents.TorrentDownloaderInterface;
 
 /**
  * Обеспечивает реализацию интерфейса загрузки с nnm-club.me
  * 
  * @author s.lezhnev
  */
-public class NNMClubDownloader implements TorrentDownloaderInterface {
+public class NNMClubDownloader extends TorrentDownloaderAbstract {
+
+	/**
+	 * см. TorrentDownloaderAbstract
+	 * 
+	 * @param httpContextIn
+	 *            см. TorrentDownloaderAbstract
+	 * @throws TorrentDownloaderException
+	 *             см. TorrentDownloaderAbstract
+	 */
+	public NNMClubDownloader(HttpContext httpContextIn)
+			throws TorrentDownloaderException {
+		super(httpContextIn);
+	}
 
 	/**
 	 * см.описание
 	 * 
-	 * @see ru.lsv.torrentchecker.server.torrents.TorrentDownloaderInterface#getResource
+	 * @see ru.lsv.torrentchecker.server.torrents.TorrentDownloaderAbstract#getResource
 	 *      ()
 	 */
 	@Override
@@ -54,31 +62,12 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 		return "nnm-club.me";
 	}
 
-	/**
-	 * см.описание
-	 * 
-	 * @throws TorrentDownloaderException
-	 *             В случае возникновения проблем со скачиванием
-	 * 
-	 * @see ru.lsv.torrentchecker.server.torrents.TorrentDownloaderInterface#
-	 *      downloadTorrent(java.net.URL, java.lang.String, java.lang.String,
-	 *      java.lang.String)
-	 */
 	@Override
-	public String downloadTorrent(URL url, String userName, String password,
-			String pathToDownload) throws TorrentDownloaderException {
-		// Тут все сложно.
-		// Первое - делаем htpp-post запрос для авторизации
-		DefaultHttpClient httpclient = new DefaultHttpClient();
-		// Инициализируем cookie store
-		CookieStore cookieStore = new BasicCookieStore();
-		HttpContext httpContext = new BasicHttpContext();
-		httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
-		//
+	public boolean authenticate(URL url, String userName, String password)
+			throws TorrentDownloaderException {
 		HttpResponse response;
-		HttpGet httpGet;
 		HttpEntity entity;
-		//
+		// Первое - делаем htpp-post запрос для авторизации
 		// Логинимся
 		HttpPost httpost = new HttpPost("http://" + getResource()
 				+ "/forum/login.php");
@@ -113,13 +102,31 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 			// Опять что-то странное
 			httpclient.getConnectionManager().shutdown();
 			throw new TorrentDownloaderException(
-					"Ошибка получения страницы с описанием торрента - entity is null");
+					"Ошибка авторизации - entity is null");
 		}
 		httpost.abort();
-		
-		// Выполняем запрос на страницу c sid
-		String sid = null;
+		return true;
+	}
+
+	/**
+	 * см.описание
+	 * 
+	 * @throws TorrentDownloaderException
+	 *             В случае возникновения проблем со скачиванием
+	 * 
+	 * @see ru.lsv.torrentchecker.server.torrents.TorrentDownloaderAbstract#
+	 *      downloadTorrent(java.net.URL, java.lang.String, java.lang.String,
+	 *      java.lang.String)
+	 */
+	@Override
+	public String downloadTorrent(URL url, String pathToDownload)
+			throws TorrentDownloaderException {
+		// Тут все сложно.
+		HttpResponse response;
+		HttpGet httpGet;
+		HttpEntity entity;
 		// Ищем нужную куку
+		String sid = null;
 		for (Cookie cookie : cookieStore.getCookies()) {
 			if ("phpbb2mysql_4_sid".equals(cookie.getName())) {
 				sid = cookie.getValue();
@@ -128,10 +135,10 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 		}
 		if (sid == null) {
 			throw new TorrentDownloaderException(
-					"Ошибка получения страницы с описанием торрента - после логина не вернулась cookie phpbb2mysql_4_sid");
+					"Ошибка получения страницы с описанием торрента - отсутствует cookie phpbb2mysql_4_sid");
 		}
 		httpGet = null;
-		// Выполняем запрос на страницу - после удачной авторизации
+		// Выполняем запрос на страницу - после авторизации
 		try {
 			httpGet = new HttpGet(url.toURI() + "&sid=" + sid);
 		} catch (URISyntaxException e) {
@@ -221,8 +228,6 @@ public class NNMClubDownloader implements TorrentDownloaderInterface {
 			throw new TorrentDownloaderException(
 					"Ошибка сохранения торрента - ошибка ввода вывода. Может место кончилось?");
 		}
-
-		httpclient.getConnectionManager().shutdown();
 
 		// http://stackoverflow.com/questions/10995378/httpurlconnection-downloaded-file-name
 		return saveToFile;
