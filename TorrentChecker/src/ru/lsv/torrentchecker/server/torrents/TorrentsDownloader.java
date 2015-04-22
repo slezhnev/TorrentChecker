@@ -247,7 +247,7 @@ public class TorrentsDownloader {
 							// Получаем список файлов из него
 							Optional<Set<String>> downloadedTorrentFiles = getFilesFromDecoded(downloadedTorrentFile, decodedDownloaded);
 							if (filesInTorrent.isPresent() && downloadedTorrentFiles.isPresent()) {
-								downloadedTorrentFiles.get().stream().filter(file -> !torrentFiles.contains(file)).forEach(file -> newFiles.add(file));
+								downloadedTorrentFiles.get().stream().filter(file -> !filesInTorrent.get().contains(file)).forEach(file -> newFiles.add(file));
 								/*
 								 * for (String file : downloadedTorrentFiles) {
 								 * if (!torrentFiles.contains(file)) {
