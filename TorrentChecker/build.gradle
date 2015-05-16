@@ -1,0 +1,69 @@
+apply plugin: 'java'
+apply plugin: 'war'
+apply plugin: 'gwt'
+apply plugin: 'eclipse'
+
+compileJava.options.encoding = 'UTF-8'
+
+sourceCompatibility = 1.8
+version = '1.0'
+
+buildscript {
+	repositories {
+		jcenter() //repository where to fetch gwt gradle plugin
+	}
+	dependencies {
+		classpath 'de.richsource.gradle.plugins:gwt-gradle-plugin:0.6'
+	}
+}
+
+project.webAppDirName = 'war'
+
+sourceSets {
+    main {	
+        java {
+            srcDir 'src'
+        }
+        resources {
+            srcDir 'src'
+        }
+    }
+}
+
+repositories {
+	maven {
+		url "http://download.java.net/maven/2/"
+	}
+    mavenCentral()
+}
+
+configurations {
+    runtime.exclude module:"gwt-user"
+}
+
+dependencies {	 
+	compile	'com.google.gwt:gwt-user:2.5.0', 
+			'org.apache.httpcomponents:httpclient:4.2.3',
+			'javax.mail:mail:1.4.5'
+}
+
+war {
+	from files('war/favicon.ico', 'war/TorrentChecker.css', 'war/TorrentChecker.html')
+	webXml = file('war/WEB-INF/web.xml')
+}
+
+gwt {
+	gwtVersion='2.5.0'
+	modules 'ru.lsv.torrentchecker.TorrentChecker'
+	sourceSets {
+		main {
+	    	java {
+	        	srcDir 'src'
+	        }
+	    }
+	}
+	logLevel = 'ERROR'
+	minHeapSize = "512M";
+	maxHeapSize = "1024M";
+}
+

@@ -7,3 +7,8 @@ TorrentChecker
 nmn-clib.me
 ipv6.nnm-club.me (для доступа необходим IPv6)
 torrent.rus.ec
+
+
+Для создания проекта под Eclipse используйте "gradle eclipse"
+
+Для сборки проекта - "gradle build"

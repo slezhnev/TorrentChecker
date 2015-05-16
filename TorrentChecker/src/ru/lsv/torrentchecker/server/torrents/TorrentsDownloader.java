@@ -464,6 +464,8 @@ public class TorrentsDownloader {
 					}
 				}
 			}
+			// А если мы доехали до сюда - то тогда тут ничего нету. Возвращаем пустоту
+			return Optional.empty();
 		}
 		return Optional.ofNullable(torrentFiles);
 	}
