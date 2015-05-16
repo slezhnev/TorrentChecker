@@ -36,7 +36,7 @@ public class TorrentCheckerServiceImpl extends RemoteServiceServlet implements
 		for (String torrent : torrents) {
 			if (torrent != null) {
 				// Ищем файл в torrents
-				File torr = new File(Commons.getTorrentsPath() + torrent);
+				File torr = new File(Commons.getTorrentsInQueue() + torrent);
 				if (!torr.exists()) {
 					res = -1;
 				} else {

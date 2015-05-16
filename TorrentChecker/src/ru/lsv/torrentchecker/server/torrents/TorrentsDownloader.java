@@ -241,8 +241,8 @@ public class TorrentsDownloader {
 								decodedDownloaded = BDecoder.bdecode(torrentFIS).getMap();
 								torrentFIS.close();
 							} catch (Exception e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
+								results.add(new FileResult(downloadInProcess.file.getName(), "Failed on decoding torrent"));
+								continue;
 							}
 							// Получаем список файлов из него
 							Optional<Set<String>> downloadedTorrentFiles = getFilesFromDecoded(downloadedTorrentFile, decodedDownloaded);
@@ -297,7 +297,9 @@ public class TorrentsDownloader {
 									results.add(new FileResult(downloadInProcess.file.getName(), "Failed copying to \"autoload\""));
 									continue;
 								}
-								try {
+								// Копирование в inqueue выключено - ибо сейчас работа будет идтить только с inqueue
+								// torrentsPath больше НЕ используется
+								/*try {
 									// И копируем его в inqueue
 									org.apache.commons.io.FileUtils.copyFile(downloadInProcess.file, new File(Commons.getTorrentsInQueue() +
 											downloadInProcess.file.getName()));
@@ -306,7 +308,7 @@ public class TorrentsDownloader {
 									// следующему
 									results.add(new FileResult(downloadInProcess.file.getName(), "Failed copying to \"inqueue\""));
 									continue;
-								}
+								}*/
 								// Возвращаем результат
 
 								if (!isFileInQueue) {

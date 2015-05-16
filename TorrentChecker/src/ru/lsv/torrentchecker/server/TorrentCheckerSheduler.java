@@ -106,13 +106,13 @@ public class TorrentCheckerSheduler implements ServletContextListener {
 		logger.info("Torrent checker - sheduler started");
 		// Получаем список файлов в Commons.getTorrentsPath
 		// Принимаем только файлы с расширением .torrent
-		String[] torrents = new File(Commons.getTorrentsPath()).list(new SuffixFileFilter(".torrent"));
+		String[] torrents = new File(Commons.getTorrentsInQueue()).list(new SuffixFileFilter(".torrent"));
 		// Теперь пройдемся по ним - и обработаем каждый
 		TorrentsDownloader downloader = new TorrentsDownloader();
 		// Конвертируем в список файлов
 		List<File> files = new ArrayList<>();
 		Arrays.asList(torrents).forEach(fileName -> {
-			files.add(new File(Commons.getTorrentsPath() + fileName));
+			files.add(new File(Commons.getTorrentsInQueue() + fileName));
 		});
 		// Запускаем проверку
 		List<FileResult> results = downloader.check(files, Commons.getCredentials(), Commons.getTempPath(), Commons.getAutoloadPath());
