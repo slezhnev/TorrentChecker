@@ -17,19 +17,6 @@ buildscript {
 	}
 }
 
-project.webAppDirName = 'war'
-
-sourceSets {
-    main {	
-        java {
-            srcDir 'src'
-        }
-        resources {
-            srcDir 'src'
-        }
-    }
-}
-
 repositories {
 	maven {
 		url "http://download.java.net/maven/2/"
@@ -38,30 +25,30 @@ repositories {
 }
 
 configurations {
+    provided
+    compile.extendsFrom provided
     runtime.exclude module:"gwt-user"
 }
 
 dependencies {	 
 	compile	'com.google.gwt:gwt-user:2.5.0', 
-			'org.apache.httpcomponents:httpclient:4.2.3',
-			'javax.mail:mail:1.4.5'
+			'org.apache.httpcomponents:httpclient:4.5.2',
+			'javax.mail:mail:1.4.5',
+			'org.slf4j:slf4j-api:1.7.18',
+			'org.slf4j:slf4j-log4j12:1.7.18',
+			'log4j:log4j:1.2.17',
+			'com.google.code.gson:gson:2.6.2',
+			'commons-io:commons-io:2.4'
+	provided 'org.projectlombok:lombok:1.16.8'
 }
 
 war {
-	from files('war/favicon.ico', 'war/TorrentChecker.css', 'war/TorrentChecker.html')
-	webXml = file('war/WEB-INF/web.xml')
+	archiveName = 'torrentchecker.war'
 }
 
 gwt {
 	gwtVersion='2.5.0'
 	modules 'ru.lsv.torrentchecker.TorrentChecker'
-	sourceSets {
-		main {
-	    	java {
-	        	srcDir 'src'
-	        }
-	    }
-	}
 	logLevel = 'ERROR'
 	minHeapSize = "512M";
 	maxHeapSize = "1024M";
