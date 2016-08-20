@@ -77,8 +77,8 @@ public class TorrentCheckerSheduler implements ServletContextListener {
 	@Override
 	public void contextInitialized(ServletContextEvent arg0) {
 		// Загружаем конфигурацию "по умолчанию"
-		try {
-			Commons.loadConfig(null);
+		try {			
+			Commons.loadConfig(arg0.getServletContext().getInitParameter("storagePath"));
 		} catch (ConfigLoadException e) {
 			// Создаем результат работы с ошибкой.
 			// До перезапуска сервиса он и будет висеть постоянно - поскольку

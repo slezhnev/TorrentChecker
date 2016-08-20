@@ -141,8 +141,9 @@ public class Commons {
 		}
 		// Загружаем пути
 		if (confPath == null) {
-			throw new ConfigLoadException(
-					"Missed config location (via parameter AND via system property)");
+			//throw new ConfigLoadException(
+			//		"Missed config location (via parameter AND via system property)");
+			confPath = ".";
 		}
 		configPath = confPath;
 		File paths = new File(confPath + File.separator + "paths.properties");
